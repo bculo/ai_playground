@@ -1,6 +1,7 @@
+import os
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
+from sqlalchemy import engine_from_config, create_engine, exc, text
 from sqlalchemy import pool
 
 from alembic import context
@@ -26,6 +27,22 @@ target_metadata = Base.metadata
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
+
+
+def create_db_if_not_exists():
+    db_uri = os.getenv('POSTGRESQL')
+    database = db_uri.split('/')[-1]
+    db_postgres = "/".join(db_uri.split('/')[0:-1])+"/postgres"
+    try:
+        engine = create_engine(db_uri)
+        with engine.connect() as conn:
+            print(f'Database {database} already exists.')
+    except exc.OperationalError:
+        print(f'Database {database} does not exist. Creating now.')
+        engine = create_engine(db_postgres)
+        with engine.connect() as conn:
+            conn.execute(text("commit"))
+            conn.execute(text(f'CREATE DATABASE {database};'))
 
 
 def run_migrations_offline() -> None:
@@ -59,6 +76,9 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+
+    create_db_if_not_exists()
+
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
@@ -74,7 +94,11 @@ def run_migrations_online() -> None:
             context.run_migrations()
 
 
+config.set_main_option('sqlalchemy.url', os.getenv("POSTGRESQL"))
+
 if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
+
+

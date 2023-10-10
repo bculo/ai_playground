@@ -11,6 +11,7 @@ sqlalchemy = "*"
 alembic = "==1.11.3"
 transformers = "*"
 torch = "*"
+psycopg2 = "*"
 
 [dev-packages]
 
