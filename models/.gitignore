@@ -1,1 +1,3 @@
 .ipynb_checkpoints
+audio/bark
+audio/*.wav
